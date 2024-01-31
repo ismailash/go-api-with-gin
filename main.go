@@ -11,6 +11,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type AuthHeader struct {
+	AuthorizationHeader string `header:"Authorization"`
+}
+
 type UserCredential struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
@@ -100,7 +104,7 @@ func greeting(c *gin.Context) {
 func main() {
 	routerEngine := gin.Default()
 
-	// routerEngine.Use(Logger())
+	routerEngine.Use(AuthMiddleware())
 
 	rgApiV1 := routerEngine.Group("/api/v1")
 
