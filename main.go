@@ -17,7 +17,7 @@ func login(c *gin.Context) {
 	// c.String(http.StatusOK, "login berhasil, halo %s", username)
 
 	var uc UserCredential
-	if err := c.ShouldBindJSON(&uc); err != nil {
+	if err := c.ShouldBind(&uc); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -38,13 +38,17 @@ func greeting(c *gin.Context) {
 func main() {
 	routerEngine := gin.Default()
 
+	rgApiV1 := routerEngine.Group("/api/v1/")
+
 	routerEngine.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Healthy Check")
 	})
 
-	routerEngine.GET("/greeting/:name", greeting)
+	rgAuth := rgApiV1.Group("/auth")
+	rgAuth.POST("/login", login)
 
-	routerEngine.POST("/login", login)
+	rgMaster := rgApiV1.Group("/master")
+	rgMaster.GET("/greeting/:name", greeting)
 
 	err := routerEngine.Run("localhost:8080")
 	if err != nil {
