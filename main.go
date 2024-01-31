@@ -38,7 +38,7 @@ func greeting(c *gin.Context) {
 func main() {
 	routerEngine := gin.Default()
 
-	rgApiV1 := routerEngine.Group("/api/v1/")
+	rgApiV1 := routerEngine.Group("/api/v1")
 
 	routerEngine.GET("/", func(c *gin.Context) {
 		c.String(http.StatusOK, "Healthy Check")
