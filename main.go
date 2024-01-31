@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,8 +36,18 @@ func greeting(c *gin.Context) {
 	c.String(http.StatusOK, "Hello %s saat ini kamu berada di kec %s kel %s", name, kec, kel)
 }
 
+func myMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log.Println("middleware dijalankan")
+
+		c.Next()
+	}
+}
+
 func main() {
 	routerEngine := gin.Default()
+
+	// routerEngine.Use(myMiddleware())
 
 	rgApiV1 := routerEngine.Group("/api/v1")
 
@@ -48,6 +59,7 @@ func main() {
 	rgAuth.POST("/login", login)
 
 	rgMaster := rgApiV1.Group("/master")
+	rgMaster.Use(myMiddleware())
 	rgMaster.GET("/greeting/:name", greeting)
 
 	err := routerEngine.Run("localhost:8080")
