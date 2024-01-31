@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +26,15 @@ type LogRequest struct {
 }
 
 func Logger() gin.HandlerFunc {
+	// Open log file
+	logFile, err := os.OpenFile("/Users/ismai/OneDrive/Desktop/go-api-with-gin/log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// create new logger instance
+	logger := log.New(logFile, "", 0)
+
 	return func(c *gin.Context) {
 		// request start time
 		startTime := time.Now()
@@ -43,7 +55,16 @@ func Logger() gin.HandlerFunc {
 			Message:    c.Errors.ByType(gin.ErrorTypePrivate).String(),
 		}
 
-		logString := fmt.Sprintf("[LOG] : %v\n", logRequest)
+		logString := "\n" +
+			"[GIN] " + endTime.Format("2006/01/02 - 15:04:05") + " " +
+			strconv.Itoa(logRequest.StatusCode) + " " +
+			logRequest.Latency.String() + " " +
+			logRequest.ClientIP + " " +
+			logRequest.Method + " " +
+			logRequest.Path + " " +
+			logRequest.Message
+		logger.Println(logString)
+
 		_, err := gin.DefaultWriter.Write([]byte(logString))
 
 		if err != nil {
@@ -77,9 +98,9 @@ func greeting(c *gin.Context) {
 }
 
 func main() {
-	routerEngine := gin.New()
+	routerEngine := gin.Default()
 
-	routerEngine.Use(Logger())
+	// routerEngine.Use(Logger())
 
 	rgApiV1 := routerEngine.Group("/api/v1")
 
