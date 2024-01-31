@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,6 +11,45 @@ import (
 type UserCredential struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type LogRequest struct {
+	Latency    time.Duration
+	StatusCode int
+	ClientIP   string
+	Method     string
+	Path       string
+	Message    string
+}
+
+func Logger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// request start time
+		startTime := time.Now()
+
+		// process request
+		c.Next()
+
+		// request end time
+		endTime := time.Now()
+
+		// log request details
+		logRequest := LogRequest{
+			Latency:    endTime.Sub(startTime),
+			StatusCode: c.Writer.Status(),
+			ClientIP:   c.ClientIP(),
+			Method:     c.Request.Method,
+			Path:       c.Request.URL.Path,
+			Message:    c.Errors.ByType(gin.ErrorTypePrivate).String(),
+		}
+
+		logString := fmt.Sprintf("[LOG] : %v\n", logRequest)
+		_, err := gin.DefaultWriter.Write([]byte(logString))
+
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 }
 
 func login(c *gin.Context) {
@@ -36,18 +76,10 @@ func greeting(c *gin.Context) {
 	c.String(http.StatusOK, "Hello %s saat ini kamu berada di kec %s kel %s", name, kec, kel)
 }
 
-func myMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		log.Println("middleware dijalankan")
-
-		c.Next()
-	}
-}
-
 func main() {
-	routerEngine := gin.Default()
+	routerEngine := gin.New()
 
-	// routerEngine.Use(myMiddleware())
+	routerEngine.Use(Logger())
 
 	rgApiV1 := routerEngine.Group("/api/v1")
 
@@ -59,7 +91,6 @@ func main() {
 	rgAuth.POST("/login", login)
 
 	rgMaster := rgApiV1.Group("/master")
-	rgMaster.Use(myMiddleware())
 	rgMaster.GET("/greeting/:name", greeting)
 
 	err := routerEngine.Run("localhost:8080")
